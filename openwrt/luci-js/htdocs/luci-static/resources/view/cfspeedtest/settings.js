@@ -24,7 +24,8 @@ return view.extend({
         o.rawhtml = true;
         o.cfgvalue = function () {
             return '<div id="cfst-status" style="padding:10px;background:#f0f0f0;border-radius:5px;">' +
-                '<button class="btn cbi-button cbi-button-apply" onclick="fetch(\'/cgi-bin/luci/admin/services/cfspeedtest/api/run\').then(()=>location.reload())">' + _('开始测速') + '</button>' +
+                '<button class="btn cbi-button cbi-button-apply" onclick="fetch(\'/cgi-bin/luci/admin/services/cfspeedtest/api/run\').then(()=>location.reload())">' + _('开始测速') + '</button> ' +
+                '<button class="btn cbi-button cbi-button-action" onclick="if(confirm(\'确定要清除LuCI缓存吗？页面将刷新。\')){fetch(\'/cgi-bin/luci/admin/services/cfspeedtest/api/clear_cache\').then(()=>location.reload())}">' + _('清除LuCI缓存') + '</button>' +
                 '</div>';
         };
 

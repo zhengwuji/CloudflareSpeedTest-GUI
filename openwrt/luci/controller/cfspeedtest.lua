@@ -28,6 +28,7 @@ function index()
     entry({"admin", "services", "cfspeedtest", "api", "apply_best"}, call("api_apply_best")).leaf = true
     entry({"admin", "services", "cfspeedtest", "api", "export"}, call("api_export")).leaf = true
     entry({"admin", "services", "cfspeedtest", "api", "clear_history"}, call("api_clear_history")).leaf = true
+    entry({"admin", "services", "cfspeedtest", "api", "clear_cache"}, call("api_clear_cache")).leaf = true
 end
 
 -- 获取状态
@@ -138,6 +139,14 @@ function api_clear_history()
     fs.remove("/etc/cfspeedtest/history.json")
     http.prepare_content("application/json")
     http.write_json({status = "cleared"})
+end
+
+-- 清除LuCI缓存
+function api_clear_cache()
+    sys.call("rm -rf /tmp/luci-*")
+    sys.call("/etc/init.d/rpcd restart 2>/dev/null")
+    http.prepare_content("application/json")
+    http.write_json({status = "cleared", message = "LuCI缓存已清除"})
 end
 
 -- 更新IP库
