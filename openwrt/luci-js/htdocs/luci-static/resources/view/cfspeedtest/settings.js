@@ -2,24 +2,16 @@
 'require view';
 'require form';
 'require fs';
-'require rpc';
 'require uci';
-'require poll';
-
-var callStatus = rpc.declare({
-    object: 'luci.cfspeedtest',
-    method: 'status',
-    expect: { }
-});
 
 return view.extend({
-    load: function() {
+    load: function () {
         return Promise.all([
             uci.load('cfspeedtest')
         ]);
     },
 
-    render: function() {
+    render: function () {
         var m, s, o;
 
         m = new form.Map('cfspeedtest', _('Cloudflare 优选IP测速'),
@@ -27,31 +19,24 @@ return view.extend({
 
         // 状态显示
         s = m.section(form.NamedSection, 'config', 'cfspeedtest', _('运行状态'));
-        
+
         o = s.option(form.DummyValue, '_status', _('当前状态'));
         o.rawhtml = true;
-        o.cfgvalue = function() {
+        o.cfgvalue = function () {
             return '<div id="cfst-status" style="padding:10px;background:#f0f0f0;border-radius:5px;">' +
-                   '<span id="status-text">加载中...</span>' +
-                   '</div>';
-        };
-
-        o = s.option(form.Button, '_run', _('操作'));
-        o.inputtitle = _('开始测速');
-        o.inputstyle = 'apply';
-        o.onclick = function() {
-            return fs.exec('/usr/bin/cfspeedtest').then(function() {
-                window.location.reload();
-            });
+                '<button class="btn cbi-button cbi-button-apply" onclick="fetch(\'/cgi-bin/luci/admin/services/cfspeedtest/api/run\').then(()=>location.reload())">' + _('开始测速') + '</button>' +
+                '</div>';
         };
 
         // 基本设置
         s = m.section(form.NamedSection, 'config', 'cfspeedtest', _('基本设置'));
         s.anonymous = true;
 
-        o = s.option(form.Flag, 'enabled', _('启用'));
-        o.rmempty = false;
+        o = s.option(form.ListValue, 'enabled', _('启用'));
+        o.value('1', _('是'));
+        o.value('0', _('否'));
         o.default = '0';
+        o.rmempty = false;
 
         o = s.option(form.Value, 'thread', _('延迟线程数'));
         o.datatype = 'range(1,1000)';
@@ -84,9 +69,11 @@ return view.extend({
         o.value('https://cf.ghproxy.cc/url', 'ghproxy.cc');
         o.default = 'https://cf.xiu2.xyz/url';
 
-        o = s.option(form.Flag, 'httping', _('HTTPing 模式'));
-        o.rmempty = false;
+        o = s.option(form.ListValue, 'httping', _('HTTPing 模式'));
+        o.value('1', _('启用'));
+        o.value('0', _('禁用'));
         o.default = '0';
+        o.rmempty = false;
 
         o = s.option(form.Value, 'cfcolo', _('数据中心地区码'));
         o.default = 'HKG,KHH,NRT,LAX';
@@ -113,20 +100,26 @@ return view.extend({
         o.datatype = 'uinteger';
         o.default = '10';
 
-        o = s.option(form.Flag, 'disable_download', _('禁用下载测速'));
-        o.rmempty = false;
+        o = s.option(form.ListValue, 'disable_download', _('禁用下载测速'));
+        o.value('1', _('是'));
+        o.value('0', _('否'));
         o.default = '0';
+        o.rmempty = false;
 
-        o = s.option(form.Flag, 'test_all', _('测速全部IP'));
-        o.rmempty = false;
+        o = s.option(form.ListValue, 'test_all', _('测速全部IP'));
+        o.value('1', _('是'));
+        o.value('0', _('否'));
         o.default = '0';
+        o.rmempty = false;
 
         // 自动应用设置
         s = m.section(form.NamedSection, 'config', 'cfspeedtest', _('自动应用最优IP'));
 
-        o = s.option(form.Flag, 'auto_apply', _('测速完成后自动应用'));
-        o.rmempty = false;
+        o = s.option(form.ListValue, 'auto_apply', _('测速完成后自动应用'));
+        o.value('1', _('是'));
+        o.value('0', _('否'));
         o.default = '0';
+        o.rmempty = false;
 
         o = s.option(form.ListValue, 'apply_target', _('应用目标'));
         o.value('hosts', 'Hosts 文件');
