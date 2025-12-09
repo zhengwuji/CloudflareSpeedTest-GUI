@@ -1,0 +1,221 @@
+<%+header%>
+
+    <style>
+        .result-toolbar {
+            margin-bottom: 15px;
+        }
+
+        .result-toolbar .btn {
+            margin-right: 10px;
+        }
+
+        .result-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .result-table th,
+        .result-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .result-table th {
+            background: #f5f5f5;
+            font-weight: bold;
+        }
+
+        .result-table tr:hover {
+            background: #f9f9f9;
+        }
+
+        .chart-container {
+            margin-top: 20px;
+            padding: 20px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .bar {
+            display: inline-block;
+            height: 20px;
+            background: linear-gradient(90deg, #4ade80, #22c55e);
+            border-radius: 3px;
+            margin-right: 10px;
+        }
+
+        .bar.latency {
+            background: linear-gradient(90deg, #60a5fa, #3b82f6);
+        }
+
+        .copy-btn {
+            cursor: pointer;
+            padding: 2px 8px;
+            font-size: 12px;
+        }
+    </style>
+
+    <div class="result-toolbar">
+        <button class="btn btn-default" onclick="refreshResult()">
+            <i class="icon-refresh"></i>
+            <%:刷新结果%>
+        </button>
+        <button class="btn btn-primary" onclick="copyBestIP()">
+            <i class="icon-copy"></i>
+            <%:复制最优IP%>
+        </button>
+        <button class="btn btn-success" onclick="exportCSV()">
+            <i class="icon-download"></i>
+            <%:导出 CSV%>
+        </button>
+        <button class="btn btn-success" onclick="exportJSON()">
+            <i class="icon-download"></i>
+            <%:导出 JSON%>
+        </button>
+    </div>
+
+    <h4>
+        <%:测速结果%>
+    </h4>
+    <table class="result-table" id="result-table">
+        <thead>
+            <tr>
+                <th>
+                    <%:排名%>
+                </th>
+                <th>
+                    <%:IP 地址%>
+                </th>
+                <th>
+                    <%:端口%>
+                </th>
+                <th>
+                    <%:延迟%>
+                </th>
+                <th>
+                    <%:丢包率%>
+                </th>
+                <th>
+                    <%:下载速度%>
+                </th>
+                <th>
+                    <%:操作%>
+                </th>
+            </tr>
+        </thead>
+        <tbody id="result-body">
+            <tr>
+                <td colspan="7" style="text-align:center;">
+                    <%:正在加载...%>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="chart-container">
+        <h4>
+            <%:速度分布图%>
+        </h4>
+        <div id="speed-chart"></div>
+    </div>
+
+    <div class="chart-container">
+        <h4>
+            <%:延迟分布图%>
+        </h4>
+        <div id="latency-chart"></div>
+    </div>
+
+    <script>
+        var resultData = [];
+
+        function refreshResult() {
+            XHR.get('<%=luci.dispatcher.build_url("admin/services/cfspeedtest/api/result")%>', null, function (x, data) {
+                if (data && data.length > 0) {
+                    resultData = data;
+                    renderTable(data);
+                    renderCharts(data);
+                } else {
+                    document.getElementById('result-body').innerHTML =
+                        '<tr><td colspan="7" style="text-align:center;"><%:暂无测速结果%></td></tr>';
+                }
+            });
+        }
+
+        function renderTable(data) {
+            var html = '';
+            for (var i = 0; i < data.length; i++) {
+                var item = data[i];
+                html += '<tr>';
+                html += '<td>' + (i + 1) + '</td>';
+                html += '<td><strong>' + item.ip + '</strong></td>';
+                html += '<td>' + item.port + '</td>';
+                html += '<td>' + item.latency + ' ms</td>';
+                html += '<td>' + item.loss + '</td>';
+                html += '<td>' + item.speed + ' MB/s</td>';
+                html += '<td><button class="btn btn-xs copy-btn" onclick="copyIP(\'' + item.ip + '\')"><%:复制%></button></td>';
+                html += '</tr>';
+            }
+            document.getElementById('result-body').innerHTML = html;
+        }
+
+        function renderCharts(data) {
+            var speedHtml = '';
+            var latencyHtml = '';
+            var maxSpeed = Math.max.apply(null, data.map(function (d) { return parseFloat(d.speed) || 0; })) || 1;
+            var maxLatency = Math.max.apply(null, data.map(function (d) { return parseFloat(d.latency) || 0; })) || 1;
+
+            for (var i = 0; i < Math.min(data.length, 10); i++) {
+                var item = data[i];
+                var speedWidth = ((parseFloat(item.speed) || 0) / maxSpeed * 200);
+                var latencyWidth = ((parseFloat(item.latency) || 0) / maxLatency * 200);
+
+                speedHtml += '<div style="margin: 5px 0;">';
+                speedHtml += '<span style="display:inline-block;width:120px;">' + item.ip + '</span>';
+                speedHtml += '<span class="bar" style="width:' + speedWidth + 'px;"></span>';
+                speedHtml += '<span>' + item.speed + ' MB/s</span>';
+                speedHtml += '</div>';
+
+                latencyHtml += '<div style="margin: 5px 0;">';
+                latencyHtml += '<span style="display:inline-block;width:120px;">' + item.ip + '</span>';
+                latencyHtml += '<span class="bar latency" style="width:' + latencyWidth + 'px;"></span>';
+                latencyHtml += '<span>' + item.latency + ' ms</span>';
+                latencyHtml += '</div>';
+            }
+
+            document.getElementById('speed-chart').innerHTML = speedHtml;
+            document.getElementById('latency-chart').innerHTML = latencyHtml;
+        }
+
+        function copyIP(ip) {
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(ip);
+                alert('<%:已复制%>: ' + ip);
+            } else {
+                prompt('<%:请手动复制%>:', ip);
+            }
+        }
+
+        function copyBestIP() {
+            if (resultData.length > 0) {
+                copyIP(resultData[0].ip);
+            } else {
+                alert('<%:暂无结果%>');
+            }
+        }
+
+        function exportCSV() {
+            window.location.href = '<%=luci.dispatcher.build_url("admin/services/cfspeedtest/api/export")%>?format=csv';
+        }
+
+        function exportJSON() {
+            window.location.href = '<%=luci.dispatcher.build_url("admin/services/cfspeedtest/api/export")%>?format=json';
+        }
+
+        // 初始化
+        refreshResult();
+    </script>
+
+    <%+footer%>

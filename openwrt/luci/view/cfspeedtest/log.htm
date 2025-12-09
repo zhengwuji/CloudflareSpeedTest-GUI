@@ -1,0 +1,115 @@
+<%+header%>
+
+    <style>
+        .log-container {
+            background: #1a1a2e;
+            color: #00ff00;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            padding: 15px;
+            border-radius: 8px;
+            height: 500px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .log-toolbar {
+            margin-bottom: 15px;
+        }
+
+        .log-toolbar .btn {
+            margin-right: 10px;
+        }
+
+        .auto-refresh {
+            display: inline-block;
+            margin-left: 20px;
+        }
+    </style>
+
+    <div class="log-toolbar">
+        <button class="btn btn-success" onclick="runTest()">
+            <i class="icon-play"></i>
+            <%:开始测速%>
+        </button>
+        <button class="btn btn-danger" onclick="stopTest()">
+            <i class="icon-stop"></i>
+            <%:停止测速%>
+        </button>
+        <button class="btn btn-default" onclick="clearLog()">
+            <i class="icon-trash"></i>
+            <%:清空日志%>
+        </button>
+        <button class="btn btn-default" onclick="refreshLog()">
+            <i class="icon-refresh"></i>
+            <%:刷新%>
+        </button>
+
+        <label class="auto-refresh">
+            <input type="checkbox" id="auto-refresh" checked onchange="toggleAutoRefresh()">
+            <%:自动刷新%> (<span id="refresh-interval">2</span>秒)
+        </label>
+    </div>
+
+    <div class="log-container" id="log-container">
+        <%:正在加载日志...%>
+    </div>
+
+    <script>
+        var autoRefreshTimer = null;
+        var autoRefreshEnabled = true;
+
+        function refreshLog() {
+            XHR.get('<%=luci.dispatcher.build_url("admin/services/cfspeedtest/api/log")%>', null, function (x, data) {
+                var container = document.getElementById('log-container');
+                if (data && data.log) {
+                    container.textContent = data.log || '<%:暂无日志%>';
+                    container.scrollTop = container.scrollHeight;
+                }
+            });
+        }
+
+        function clearLog() {
+            document.getElementById('log-container').textContent = '';
+        }
+
+        function runTest() {
+            XHR.get('<%=luci.dispatcher.build_url("admin/services/cfspeedtest/api/run")%>', null, function (x, data) {
+                refreshLog();
+            });
+        }
+
+        function stopTest() {
+            XHR.get('<%=luci.dispatcher.build_url("admin/services/cfspeedtest/api/stop")%>', null, function (x, data) {
+                refreshLog();
+            });
+        }
+
+        function toggleAutoRefresh() {
+            autoRefreshEnabled = document.getElementById('auto-refresh').checked;
+            if (autoRefreshEnabled) {
+                startAutoRefresh();
+            } else {
+                stopAutoRefresh();
+            }
+        }
+
+        function startAutoRefresh() {
+            if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+            autoRefreshTimer = setInterval(refreshLog, 2000);
+        }
+
+        function stopAutoRefresh() {
+            if (autoRefreshTimer) {
+                clearInterval(autoRefreshTimer);
+                autoRefreshTimer = null;
+            }
+        }
+
+        // 初始化
+        refreshLog();
+        startAutoRefresh();
+    </script>
+
+    <%+footer%>

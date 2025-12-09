@@ -1,8 +1,13 @@
 local m, s, o
+local sys = require "luci.sys"
+local fs = require "nixio.fs"
 
 m = Map("cfspeedtest", translate("Cloudflare 优选IP测速"),
     translate("通过测速找出延迟最低、速度最快的 Cloudflare IP"))
 
+m:append(Template("cfspeedtest/status"))
+
+-- 基本设置
 s = m:section(TypedSection, "cfspeedtest", translate("基本设置"))
 s.anonymous = true
 s.addremove = false
@@ -38,6 +43,9 @@ o.rmempty = false
 o = s:option(Value, "url", translate("测速地址"))
 o.default = "https://cf.xiu2.xyz/url"
 o.rmempty = false
+o:value("https://cf.xiu2.xyz/url", "cf.xiu2.xyz (推荐)")
+o:value("https://speed.cloudflare.com/__down?bytes=200000000", "Cloudflare 官方")
+o:value("https://cf.ghproxy.cc/url", "ghproxy.cc")
 
 o = s:option(Flag, "httping", translate("HTTPing 模式"))
 o.rmempty = false
@@ -46,6 +54,7 @@ o = s:option(Value, "cfcolo", translate("数据中心地区码"))
 o.default = "HKG,KHH,NRT,LAX"
 o.rmempty = true
 o.description = translate("HTTPing 模式下可用，多个用逗号分隔")
+o:depends("httping", "1")
 
 o = s:option(Value, "tl", translate("平均延迟上限(ms)"))
 o.datatype = "uinteger"
@@ -62,7 +71,7 @@ o.default = "1.00"
 o.rmempty = false
 
 o = s:option(Value, "sl", translate("下载速度下限(MB/s)"))
-o.datatype = "uinteger"
+o.datatype = "ufloat"
 o.default = "0"
 o.rmempty = false
 
@@ -77,41 +86,33 @@ o.rmempty = false
 o = s:option(Flag, "test_all", translate("测速全部IP"))
 o.rmempty = false
 
--- 操作按钮
-s = m:section(TypedSection, "cfspeedtest", translate("操作"))
+-- 自动应用设置
+s = m:section(TypedSection, "cfspeedtest", translate("自动应用最优IP"))
 s.anonymous = true
 s.addremove = false
 
-o = s:option(Button, "run", translate("开始测速"))
-o.inputtitle = translate("运行测速")
-o.inputstyle = "apply"
-o.write = function()
-    luci.sys.call("/etc/init.d/cfspeedtest start &")
-end
+o = s:option(Flag, "auto_apply", translate("测速完成后自动应用"))
+o.rmempty = false
 
-o = s:option(Button, "stop", translate("停止测速"))
-o.inputtitle = translate("停止")
-o.inputstyle = "reset"
-o.write = function()
-    luci.sys.call("/etc/init.d/cfspeedtest stop")
-end
+o = s:option(ListValue, "apply_target", translate("应用目标"))
+o:value("hosts", "Hosts 文件")
+o:value("passwall", "Passwall")
+o:value("ssrplus", "SSR Plus")
+o:value("openclash", "OpenClash")
+o.default = "hosts"
+o:depends("auto_apply", "1")
 
--- 结果显示
-s = m:section(TypedSection, "cfspeedtest", translate("测速结果"))
-s.anonymous = true
-s.addremove = false
+o = s:option(Value, "apply_domains", translate("应用域名"))
+o.default = "cf.example.com"
+o.description = translate("多个域名用空格或逗号分隔")
+o:depends("apply_target", "hosts")
 
-o = s:option(TextValue, "result", translate("最新结果"))
-o.rows = 15
-o.readonly = true
-o.cfgvalue = function()
-    local file = io.open("/tmp/cfspeedtest_result.csv", "r")
-    if file then
-        local content = file:read("*all")
-        file:close()
-        return content
-    end
-    return translate("暂无测速结果，请先运行测速")
-end
+o = s:option(Value, "passwall_node", translate("Passwall 节点ID"))
+o.description = translate("在 Passwall 节点列表中查看节点 ID")
+o:depends("apply_target", "passwall")
+
+o = s:option(Value, "ssrplus_node", translate("SSR Plus 节点ID"))
+o.description = translate("在 SSR Plus 服务器列表中查看节点 ID")
+o:depends("apply_target", "ssrplus")
 
 return m

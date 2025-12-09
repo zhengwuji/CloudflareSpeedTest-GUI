@@ -1,0 +1,117 @@
+<%+header%>
+
+    <style>
+        .history-toolbar {
+            margin-bottom: 15px;
+        }
+
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .history-table th,
+        .history-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .history-table th {
+            background: #f5f5f5;
+            font-weight: bold;
+        }
+
+        .history-table tr:hover {
+            background: #f9f9f9;
+        }
+
+        .trend-up {
+            color: #22c55e;
+        }
+
+        .trend-down {
+            color: #ef4444;
+        }
+    </style>
+
+    <div class="history-toolbar">
+        <button class="btn btn-default" onclick="refreshHistory()">
+            <i class="icon-refresh"></i>
+            <%:刷新%>
+        </button>
+        <button class="btn btn-danger" onclick="clearHistory()">
+            <i class="icon-trash"></i>
+            <%:清空历史%>
+        </button>
+    </div>
+
+    <table class="history-table" id="history-table">
+        <thead>
+            <tr>
+                <th>
+                    <%:时间%>
+                </th>
+                <th>
+                    <%:最优 IP%>
+                </th>
+                <th>
+                    <%:延迟%>
+                </th>
+                <th>
+                    <%:速度%>
+                </th>
+                <th>
+                    <%:结果数%>
+                </th>
+            </tr>
+        </thead>
+        <tbody id="history-body">
+            <tr>
+                <td colspan="5" style="text-align:center;">
+                    <%:正在加载...%>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <script>
+        function refreshHistory() {
+            XHR.get('<%=luci.dispatcher.build_url("admin/services/cfspeedtest/api/history")%>', null, function (x, data) {
+                if (data && data.length > 0) {
+                    renderHistory(data);
+                } else {
+                    document.getElementById('history-body').innerHTML =
+                        '<tr><td colspan="5" style="text-align:center;"><%:暂无历史记录%></td></tr>';
+                }
+            });
+        }
+
+        function renderHistory(data) {
+            var html = '';
+            for (var i = 0; i < data.length; i++) {
+                var item = data[i];
+                html += '<tr>';
+                html += '<td>' + item.time + '</td>';
+                html += '<td><strong>' + item.best_ip + '</strong></td>';
+                html += '<td>' + item.best_latency + ' ms</td>';
+                html += '<td>' + item.best_speed + ' MB/s</td>';
+                html += '<td>' + item.total_results + '</td>';
+                html += '</tr>';
+            }
+            document.getElementById('history-body').innerHTML = html;
+        }
+
+        function clearHistory() {
+            if (confirm('<%:确定要清空所有历史记录吗？%>')) {
+                XHR.get('<%=luci.dispatcher.build_url("admin/services/cfspeedtest/api/clear_history")%>', null, function (x, data) {
+                    refreshHistory();
+                });
+            }
+        }
+
+        // 初始化
+        refreshHistory();
+    </script>
+
+    <%+footer%>

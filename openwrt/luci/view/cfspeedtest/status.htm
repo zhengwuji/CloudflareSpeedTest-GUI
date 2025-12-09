@@ -1,0 +1,165 @@
+<%+header%>
+
+<style>
+.cfst-status-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+.cfst-status-card h3 {
+    margin: 0 0 15px 0;
+    color: white;
+}
+.cfst-status-item {
+    display: inline-block;
+    margin-right: 30px;
+    margin-bottom: 10px;
+}
+.cfst-status-label {
+    font-size: 12px;
+    opacity: 0.8;
+}
+.cfst-status-value {
+    font-size: 24px;
+    font-weight: bold;
+}
+.cfst-btn-group {
+    margin-top: 15px;
+}
+.cfst-btn-group .btn {
+    margin-right: 10px;
+}
+.status-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 5px;
+}
+.status-dot.running {
+    background: #4ade80;
+    animation: pulse 1s infinite;
+}
+.status-dot.stopped {
+    background: #f87171;
+}
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+</style>
+
+<div class="cfst-status-card" id="status-card">
+    <h3><i class="icon-globe"></i> <%:Cloudflare 优选IP 测速%></h3>
+    
+    <div class="cfst-status-item">
+        <div class="cfst-status-label"><%:运行状态%></div>
+        <div class="cfst-status-value" id="status-running">
+            <span class="status-dot stopped"></span> <%:未运行%>
+        </div>
+    </div>
+    
+    <div class="cfst-status-item">
+        <div class="cfst-status-label"><%:最优 IP%></div>
+        <div class="cfst-status-value" id="status-best-ip">-</div>
+    </div>
+    
+    <div class="cfst-status-item">
+        <div class="cfst-status-label"><%:延迟%></div>
+        <div class="cfst-status-value" id="status-latency">- ms</div>
+    </div>
+    
+    <div class="cfst-status-item">
+        <div class="cfst-status-label"><%:速度%></div>
+        <div class="cfst-status-value" id="status-speed">- MB/s</div>
+    </div>
+    
+    <div class="cfst-btn-group">
+        <button class="btn btn-success" id="btn-run" onclick="runTest()">
+            <i class="icon-play"></i> <%:开始测速%>
+        </button>
+        <button class="btn btn-danger" id="btn-stop" onclick="stopTest()" style="display:none;">
+            <i class="icon-stop"></i> <%:停止测速%>
+        </button>
+        <button class="btn btn-primary" id="btn-apply" onclick="applyBest()">
+            <i class="icon-check"></i> <%:应用最优IP%>
+        </button>
+        <button class="btn btn-default" onclick="updateIP()">
+            <i class="icon-refresh"></i> <%:更新IP库%>
+        </button>
+        <button class="btn btn-default" onclick="updateCFST()">
+            <i class="icon-download"></i> <%:更新程序%>
+        </button>
+    </div>
+</div>
+
+<script>
+function updateStatus() {
+    XHR.get('<%=luci.dispatcher.build_url("admin/services/cfspeedtest/api/status")%>', null, function(x, data) {
+        if (data) {
+            var runningEl = document.getElementById('status-running');
+            var btnRun = document.getElementById('btn-run');
+            var btnStop = document.getElementById('btn-stop');
+            
+            if (data.running) {
+                runningEl.innerHTML = '<span class="status-dot running"></span> <%:运行中%>';
+                btnRun.style.display = 'none';
+                btnStop.style.display = '';
+            } else {
+                runningEl.innerHTML = '<span class="status-dot stopped"></span> <%:未运行%>';
+                btnRun.style.display = '';
+                btnStop.style.display = 'none';
+            }
+            
+            if (data.best_ip) {
+                document.getElementById('status-best-ip').textContent = data.best_ip;
+                document.getElementById('status-latency').textContent = (data.best_latency || '-') + ' ms';
+                document.getElementById('status-speed').textContent = (data.best_speed || '-') + ' MB/s';
+            }
+        }
+    });
+}
+
+function runTest() {
+    XHR.get('<%=luci.dispatcher.build_url("admin/services/cfspeedtest/api/run")%>', null, function(x, data) {
+        updateStatus();
+    });
+}
+
+function stopTest() {
+    XHR.get('<%=luci.dispatcher.build_url("admin/services/cfspeedtest/api/stop")%>', null, function(x, data) {
+        updateStatus();
+    });
+}
+
+function applyBest() {
+    var target = '<%=luci.model.uci.cursor():get("cfspeedtest", "config", "apply_target") or "hosts"%>';
+    XHR.get('<%=luci.dispatcher.build_url("admin/services/cfspeedtest/api/apply_best")%>', {target: target}, function(x, data) {
+        if (data && data.status == 'success') {
+            alert(data.message);
+        } else {
+            alert(data.message || '<%:应用失败%>');
+        }
+    });
+}
+
+function updateIP() {
+    XHR.get('<%=luci.dispatcher.build_url("admin/services/cfspeedtest/api/update_ip")%>', null, function(x, data) {
+        alert('<%:IP库更新中，请稍候...%>');
+    });
+}
+
+function updateCFST() {
+    XHR.get('<%=luci.dispatcher.build_url("admin/services/cfspeedtest/api/update_cfst")%>', null, function(x, data) {
+        alert('<%:CloudflareST 更新中，请稍候...%>');
+    });
+}
+
+// 每3秒刷新状态
+updateStatus();
+setInterval(updateStatus, 3000);
+</script>
+
+<%+footer%>

@@ -60,49 +60,99 @@ jobs:
     - name: Build OpenWrt LuCI package
       run: |
         # 创建 ipk 包结构
-        mkdir -p openwrt-package/luci-app-cfspeedtest/root/usr/lib/lua/luci/controller
-        mkdir -p openwrt-package/luci-app-cfspeedtest/root/usr/lib/lua/luci/model/cbi
-        mkdir -p openwrt-package/luci-app-cfspeedtest/root/usr/lib/lua/luci/view/cfspeedtest
-        mkdir -p openwrt-package/luci-app-cfspeedtest/root/etc/config
-        mkdir -p openwrt-package/luci-app-cfspeedtest/root/etc/init.d
-        mkdir -p openwrt-package/luci-app-cfspeedtest/root/usr/bin
+        PKG_DIR="openwrt-package/luci-app-cfspeedtest"
+        mkdir -p $PKG_DIR/root/usr/lib/lua/luci/controller
+        mkdir -p $PKG_DIR/root/usr/lib/lua/luci/model/cbi/cfspeedtest
+        mkdir -p $PKG_DIR/root/usr/lib/lua/luci/view/cfspeedtest
+        mkdir -p $PKG_DIR/root/etc/config
+        mkdir -p $PKG_DIR/root/etc/init.d
+        mkdir -p $PKG_DIR/root/etc/cfspeedtest
+        mkdir -p $PKG_DIR/root/usr/bin
         
-        # 复制 LuCI 文件
-        cp -r openwrt/luci/* openwrt-package/luci-app-cfspeedtest/root/usr/lib/lua/luci/
-        cp openwrt/cfspeedtest.config openwrt-package/luci-app-cfspeedtest/root/etc/config/cfspeedtest
-        cp openwrt/cfspeedtest.init openwrt-package/luci-app-cfspeedtest/root/etc/init.d/cfspeedtest
-        cp openwrt/cfspeedtest.sh openwrt-package/luci-app-cfspeedtest/root/usr/bin/cfspeedtest
-        chmod +x openwrt-package/luci-app-cfspeedtest/root/etc/init.d/cfspeedtest
-        chmod +x openwrt-package/luci-app-cfspeedtest/root/usr/bin/cfspeedtest
+        # 复制 LuCI 控制器
+        cp openwrt/luci/controller/cfspeedtest.lua $PKG_DIR/root/usr/lib/lua/luci/controller/
+        
+        # 复制 CBI 模型
+        cp openwrt/luci/model/cbi/cfspeedtest/*.lua $PKG_DIR/root/usr/lib/lua/luci/model/cbi/cfspeedtest/
+        
+        # 复制视图模板
+        cp openwrt/luci/view/cfspeedtest/*.htm $PKG_DIR/root/usr/lib/lua/luci/view/cfspeedtest/
+        
+        # 复制配置和脚本
+        cp openwrt/cfspeedtest.config $PKG_DIR/root/etc/config/cfspeedtest
+        cp openwrt/cfspeedtest.init $PKG_DIR/root/etc/init.d/cfspeedtest
+        cp openwrt/cfspeedtest.sh $PKG_DIR/root/usr/bin/cfspeedtest
+        cp openwrt/cfspeedtest_update_ip.sh $PKG_DIR/root/usr/bin/cfspeedtest_update_ip
+        cp openwrt/cfspeedtest_update_cfst.sh $PKG_DIR/root/usr/bin/cfspeedtest_update_cfst
+        
+        # 设置权限
+        chmod +x $PKG_DIR/root/etc/init.d/cfspeedtest
+        chmod +x $PKG_DIR/root/usr/bin/cfspeedtest
+        chmod +x $PKG_DIR/root/usr/bin/cfspeedtest_update_ip
+        chmod +x $PKG_DIR/root/usr/bin/cfspeedtest_update_cfst
         
         # 创建控制文件
-        mkdir -p openwrt-package/luci-app-cfspeedtest/CONTROL
-        cat > openwrt-package/luci-app-cfspeedtest/CONTROL/control << 'EOF'
+        mkdir -p $PKG_DIR/CONTROL
+        cat > $PKG_DIR/CONTROL/control << 'EOF'
         Package: luci-app-cfspeedtest
-        Version: 1.0.0
-        Depends: libc, luci-base
+        Version: 2.0.0
+        Depends: libc, luci-base, wget
         Section: luci
         Architecture: all
         Maintainer: CloudflareSpeedTest-GUI
         Description: LuCI support for CloudflareSpeedTest
+         Cloudflare 优选 IP 测速工具 LuCI 界面
+         功能包括：
+         - 可视化参数配置
+         - 实时日志显示
+         - 结果可视化图表
+         - 历史记录
+         - 定时测速
+         - 自动应用最优IP
+         - Passwall/SSR Plus 联动
+         - 自定义IP段
+         - CloudflareST 版本管理
         EOF
+        
+        # 创建 postinst 脚本
+        cat > $PKG_DIR/CONTROL/postinst << 'EOF'
+        #!/bin/sh
+        [ -z "$IPKG_INSTROOT" ] && {
+            /etc/init.d/cfspeedtest enable
+            rm -rf /tmp/luci-*
+        }
+        exit 0
+        EOF
+        chmod +x $PKG_DIR/CONTROL/postinst
+        
+        # 创建 prerm 脚本
+        cat > $PKG_DIR/CONTROL/prerm << 'EOF'
+        #!/bin/sh
+        [ -z "$IPKG_INSTROOT" ] && {
+            /etc/init.d/cfspeedtest stop
+            /etc/init.d/cfspeedtest disable
+        }
+        exit 0
+        EOF
+        chmod +x $PKG_DIR/CONTROL/prerm
         
         # 打包 ipk
         cd openwrt-package
         tar -czvf data.tar.gz -C luci-app-cfspeedtest/root .
         tar -czvf control.tar.gz -C luci-app-cfspeedtest/CONTROL .
         echo "2.0" > debian-binary
-        tar -czvf ../luci-app-cfspeedtest_1.0.0_all.ipk debian-binary data.tar.gz control.tar.gz
+        tar -czvf ../luci-app-cfspeedtest_2.0.0_all.ipk debian-binary data.tar.gz control.tar.gz
         cd ..
-      continue-on-error: true
+        
+        echo "IPK 包构建完成"
+        ls -la *.ipk
     
     - name: Upload OpenWrt artifact
       uses: actions/upload-artifact@v4
       with:
         name: luci-app-cfspeedtest-OpenWrt
-        path: luci-app-cfspeedtest_1.0.0_all.ipk
+        path: luci-app-cfspeedtest_2.0.0_all.ipk
         retention-days: 30
-      continue-on-error: true
 
   release:
     needs: [build-windows, build-openwrt]
@@ -127,7 +177,6 @@ jobs:
       with:
         name: luci-app-cfspeedtest-OpenWrt
         path: ./release
-      continue-on-error: true
     
     - name: Get current date
       id: date
@@ -137,25 +186,44 @@ jobs:
       id: changelog
       run: |
         echo "changelog<<EOF" >> $GITHUB_OUTPUT
-        echo "## 更新日志" >> $GITHUB_OUTPUT
+        echo "## 🎉 CloudflareSpeedTest-GUI Release" >> $GITHUB_OUTPUT
         echo "" >> $GITHUB_OUTPUT
-        echo "### 🆕 本次更新" >> $GITHUB_OUTPUT
+        echo "### 📝 更新日志" >> $GITHUB_OUTPUT
         git log --pretty=format:"- %s" -10 >> $GITHUB_OUTPUT
         echo "" >> $GITHUB_OUTPUT
         echo "" >> $GITHUB_OUTPUT
-        echo "### 📦 下载说明" >> $GITHUB_OUTPUT
-        echo "- **Windows**: 下载 \`CloudflareSpeedTest-GUI.exe\`" >> $GITHUB_OUTPUT
-        echo "- **OpenWrt**: 下载 \`luci-app-cfspeedtest_1.0.0_all.ipk\` 并通过 LuCI 上传安装" >> $GITHUB_OUTPUT
+        echo "---" >> $GITHUB_OUTPUT
         echo "" >> $GITHUB_OUTPUT
-        echo "### ✨ 主要功能" >> $GITHUB_OUTPUT
+        echo "### 📦 下载说明" >> $GITHUB_OUTPUT
+        echo "" >> $GITHUB_OUTPUT
+        echo "| 平台 | 文件 | 说明 |" >> $GITHUB_OUTPUT
+        echo "|------|------|------|" >> $GITHUB_OUTPUT
+        echo "| Windows | \`CloudflareSpeedTest-GUI.exe\` | 双击运行，需要 cfst.exe 和 ip.txt |" >> $GITHUB_OUTPUT
+        echo "| OpenWrt | \`luci-app-cfspeedtest_2.0.0_all.ipk\` | 通过 LuCI 上传安装 |" >> $GITHUB_OUTPUT
+        echo "" >> $GITHUB_OUTPUT
+        echo "---" >> $GITHUB_OUTPUT
+        echo "" >> $GITHUB_OUTPUT
+        echo "### ✨ Windows 功能" >> $GITHUB_OUTPUT
         echo "- 🖥️ 测速结果实时显示" >> $GITHUB_OUTPUT
         echo "- 📊 进度条显示测速进度" >> $GITHUB_OUTPUT
         echo "- 📋 结果查看器 (表格展示)" >> $GITHUB_OUTPUT
         echo "- 📋 一键复制最优 IP" >> $GITHUB_OUTPUT
         echo "- 🌙 深色/浅色主题切换" >> $GITHUB_OUTPUT
         echo "- 📌 系统托盘支持" >> $GITHUB_OUTPUT
-        echo "- 🔄 自动更新 IP 库" >> $GITHUB_OUTPUT
+        echo "- 🔄 自动更新 IP 库 (国内代理)" >> $GITHUB_OUTPUT
         echo "- 📜 测速历史记录" >> $GITHUB_OUTPUT
+        echo "" >> $GITHUB_OUTPUT
+        echo "### ✨ OpenWrt LuCI 功能" >> $GITHUB_OUTPUT
+        echo "- ⚙️ 可视化参数配置" >> $GITHUB_OUTPUT
+        echo "- 📺 实时日志显示" >> $GITHUB_OUTPUT
+        echo "- 📊 结果可视化图表" >> $GITHUB_OUTPUT
+        echo "- 📜 历史记录保存" >> $GITHUB_OUTPUT
+        echo "- ⏰ 定时测速任务" >> $GITHUB_OUTPUT
+        echo "- 🚀 自动应用最优 IP" >> $GITHUB_OUTPUT
+        echo "- 🔗 Passwall/SSR Plus/OpenClash 联动" >> $GITHUB_OUTPUT
+        echo "- 📝 自定义 IP 段" >> $GITHUB_OUTPUT
+        echo "- 📤 结果导出 (CSV/JSON)" >> $GITHUB_OUTPUT
+        echo "- 🔧 CloudflareST 版本管理" >> $GITHUB_OUTPUT
         echo "" >> $GITHUB_OUTPUT
         echo "---" >> $GITHUB_OUTPUT
         echo "构建时间: ${{ steps.date.outputs.date }}" >> $GITHUB_OUTPUT

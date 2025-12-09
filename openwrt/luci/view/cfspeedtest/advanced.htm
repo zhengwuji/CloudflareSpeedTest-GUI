@@ -1,0 +1,94 @@
+<%+header%>
+
+    <style>
+        .version-card {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .version-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .version-item {
+            flex: 1;
+        }
+
+        .version-label {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .version-value {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .update-available {
+            color: #f59e0b;
+        }
+    </style>
+
+    <div class="version-card">
+        <h4>
+            <%:CloudflareST 版本信息%>
+        </h4>
+        <div class="version-info" id="version-info">
+            <div class="version-item">
+                <div class="version-label">
+                    <%:当前版本%>
+                </div>
+                <div class="version-value" id="current-version">
+                    <%:加载中...%>
+                </div>
+            </div>
+            <div class="version-item">
+                <div class="version-label">
+                    <%:最新版本%>
+                </div>
+                <div class="version-value" id="latest-version">
+                    <%:加载中...%>
+                </div>
+            </div>
+            <div class="version-item">
+                <button class="btn btn-primary" onclick="updateCFST()">
+                    <i class="icon-download"></i>
+                    <%:更新程序%>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function loadVersion() {
+            XHR.get('<%=luci.dispatcher.build_url("admin/services/cfspeedtest/api/cfst_version")%>', null, function (x, data) {
+                if (data) {
+                    document.getElementById('current-version').textContent = data.current || '<%:未安装%>';
+                    document.getElementById('latest-version').textContent = data.latest || '<%:未知%>';
+
+                    if (data.current && data.latest && data.current !== data.latest) {
+                        document.getElementById('latest-version').className = 'version-value update-available';
+                    }
+                }
+            });
+        }
+
+        function updateCFST() {
+            if (confirm('<%:确定要更新 CloudflareST 吗？%>')) {
+                XHR.get('<%=luci.dispatcher.build_url("admin/services/cfspeedtest/api/update_cfst")%>', null, function (x, data) {
+                    alert('<%:更新已开始，请稍候...%>');
+                    setTimeout(loadVersion, 10000);
+                });
+            }
+        }
+
+        // 初始化
+        loadVersion();
+    </script>
+
+    <%+footer%>
