@@ -18,11 +18,11 @@ o.cfgvalue = function()
     if fs.access("/usr/bin/CloudflareST") then
         local version = sys.exec("/usr/bin/CloudflareST -v 2>&1 | head -1"):gsub("%s+", " ")
         return string.format(
-            '<span class="label label-success">已安装</span> %s',
+            '<span style="color:green;font-weight:bold;">已安装</span> %s',
             version
         )
     else
-        return '<span class="label label-danger">未安装</span>'
+        return '<span style="color:red;font-weight:bold;">未安装</span>'
     end
 end
 
@@ -36,7 +36,10 @@ s = m:section(TypedSection, "cfspeedtest", translate("代理设置"))
 s.anonymous = true
 s.addremove = false
 
-o = s:option(Flag, "use_proxy", translate("使用代理下载"))
+o = s:option(ListValue, "use_proxy", translate("使用代理下载"))
+o:value("1", translate("是"))
+o:value("0", translate("否"))
+o.default = "1"
 o.rmempty = false
 o.description = translate("更新 IP 库和 CloudflareST 时使用代理")
 

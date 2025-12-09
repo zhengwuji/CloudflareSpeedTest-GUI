@@ -303,6 +303,12 @@ main() {
         
         # 自动应用
         auto_apply
+        
+        # 应用到第三方应用
+        if [ -x "/usr/bin/cfspeedtest_apply" ]; then
+            log "执行第三方应用联动..."
+            /usr/bin/cfspeedtest_apply
+        fi
     fi
     
     log "=========================================="

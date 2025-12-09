@@ -1,0 +1,38 @@
+{
+    "luci-app-cfspeedtest": {
+        "description": "Grant access to CF SpeedTest",
+        "read": {
+            "uci": [
+                "cfspeedtest"
+            ],
+            "file": {
+                "/tmp/cfspeedtest.log": [
+                    "read"
+                ],
+                "/tmp/cfspeedtest_result.csv": [
+                    "read"
+                ],
+                "/etc/cfspeedtest/history.json": [
+                    "read"
+                ],
+                "/etc/cfspeedtest/custom_ip.txt": [
+                    "read",
+                    "write"
+                ],
+                "/tmp/ip.txt": [
+                    "read"
+                ]
+            }
+        },
+        "write": {
+            "uci": [
+                "cfspeedtest"
+            ],
+            "file": {
+                "/etc/cfspeedtest/*": [
+                    "write"
+                ]
+            }
+        }
+    }
+}

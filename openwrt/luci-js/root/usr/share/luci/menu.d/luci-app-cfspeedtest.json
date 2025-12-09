@@ -1,0 +1,54 @@
+{
+    "admin/services/cfspeedtest": {
+        "title": "CF优选IP",
+        "order": 80,
+        "action": {
+            "type": "firstchild"
+        },
+        "depends": {
+            "acl": [
+                "luci-app-cfspeedtest"
+            ]
+        }
+    },
+    "admin/services/cfspeedtest/settings": {
+        "title": "基本设置",
+        "order": 1,
+        "action": {
+            "type": "view",
+            "path": "cfspeedtest/settings"
+        }
+    },
+    "admin/services/cfspeedtest/thirdparty": {
+        "title": "第三方应用",
+        "order": 2,
+        "action": {
+            "type": "view",
+            "path": "cfspeedtest/thirdparty"
+        }
+    },
+    "admin/services/cfspeedtest/log": {
+        "title": "实时日志",
+        "order": 3,
+        "action": {
+            "type": "view",
+            "path": "cfspeedtest/log"
+        }
+    },
+    "admin/services/cfspeedtest/result": {
+        "title": "测速结果",
+        "order": 4,
+        "action": {
+            "type": "view",
+            "path": "cfspeedtest/result"
+        }
+    },
+    "admin/services/cfspeedtest/history": {
+        "title": "历史记录",
+        "order": 5,
+        "action": {
+            "type": "view",
+            "path": "cfspeedtest/history"
+        }
+    }
+}

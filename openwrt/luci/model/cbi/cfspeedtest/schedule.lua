@@ -7,7 +7,10 @@ s = m:section(TypedSection, "cfspeedtest", translate("定时测速设置"))
 s.anonymous = true
 s.addremove = false
 
-o = s:option(Flag, "schedule_enabled", translate("启用定时测速"))
+o = s:option(ListValue, "schedule_enabled", translate("启用定时测速"))
+o:value("1", translate("启用"))
+o:value("0", translate("禁用"))
+o.default = "0"
 o.rmempty = false
 
 o = s:option(ListValue, "schedule_type", translate("执行频率"))

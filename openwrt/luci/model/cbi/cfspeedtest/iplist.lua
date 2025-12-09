@@ -8,7 +8,10 @@ s = m:section(TypedSection, "cfspeedtest", translate("IP 段管理"))
 s.anonymous = true
 s.addremove = false
 
-o = s:option(Flag, "use_custom_ip", translate("使用自定义IP段"))
+o = s:option(ListValue, "use_custom_ip", translate("使用自定义IP段"))
+o:value("1", translate("是"))
+o:value("0", translate("否"))
+o.default = "0"
 o.rmempty = false
 o.description = translate("启用后将使用下方的自定义IP段进行测速")
 
@@ -46,12 +49,12 @@ o.cfgvalue = function()
         local lines = 0
         for _ in io.lines(file) do lines = lines + 1 end
         return string.format(
-            "<span class='label label-success'>已加载</span> %d 行 | 更新时间: %s",
+            "<span style='color:green;font-weight:bold;'>已加载</span> %d 行 | 更新时间: %s",
             lines,
             os.date("%Y-%m-%d %H:%M", stat.mtime)
         )
     else
-        return "<span class='label label-warning'>未加载</span>"
+        return "<span style='color:orange;font-weight:bold;'>未加载</span>"
     end
 end
 

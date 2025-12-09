@@ -12,7 +12,10 @@ s = m:section(TypedSection, "cfspeedtest", translate("基本设置"))
 s.anonymous = true
 s.addremove = false
 
-o = s:option(Flag, "enabled", translate("启用"))
+o = s:option(ListValue, "enabled", translate("启用"))
+o:value("1", translate("是"))
+o:value("0", translate("否"))
+o.default = "0"
 o.rmempty = false
 
 o = s:option(Value, "thread", translate("延迟线程数"))
@@ -40,14 +43,17 @@ o.datatype = "port"
 o.default = "443"
 o.rmempty = false
 
-o = s:option(Value, "url", translate("测速地址"))
-o.default = "https://cf.xiu2.xyz/url"
-o.rmempty = false
+o = s:option(ListValue, "url", translate("测速地址"))
 o:value("https://cf.xiu2.xyz/url", "cf.xiu2.xyz (推荐)")
 o:value("https://speed.cloudflare.com/__down?bytes=200000000", "Cloudflare 官方")
 o:value("https://cf.ghproxy.cc/url", "ghproxy.cc")
+o.default = "https://cf.xiu2.xyz/url"
+o.rmempty = false
 
-o = s:option(Flag, "httping", translate("HTTPing 模式"))
+o = s:option(ListValue, "httping", translate("HTTPing 模式"))
+o:value("1", translate("启用"))
+o:value("0", translate("禁用"))
+o.default = "0"
 o.rmempty = false
 
 o = s:option(Value, "cfcolo", translate("数据中心地区码"))
@@ -80,10 +86,16 @@ o.datatype = "uinteger"
 o.default = "10"
 o.rmempty = false
 
-o = s:option(Flag, "disable_download", translate("禁用下载测速"))
+o = s:option(ListValue, "disable_download", translate("禁用下载测速"))
+o:value("1", translate("是"))
+o:value("0", translate("否"))
+o.default = "0"
 o.rmempty = false
 
-o = s:option(Flag, "test_all", translate("测速全部IP"))
+o = s:option(ListValue, "test_all", translate("测速全部IP"))
+o:value("1", translate("是"))
+o:value("0", translate("否"))
+o.default = "0"
 o.rmempty = false
 
 -- 自动应用设置
@@ -91,7 +103,10 @@ s = m:section(TypedSection, "cfspeedtest", translate("自动应用最优IP"))
 s.anonymous = true
 s.addremove = false
 
-o = s:option(Flag, "auto_apply", translate("测速完成后自动应用"))
+o = s:option(ListValue, "auto_apply", translate("测速完成后自动应用"))
+o:value("1", translate("是"))
+o:value("0", translate("否"))
+o.default = "0"
 o.rmempty = false
 
 o = s:option(ListValue, "apply_target", translate("应用目标"))
