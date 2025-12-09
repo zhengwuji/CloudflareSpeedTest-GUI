@@ -30,7 +30,12 @@ jobs:
     
     - name: Build EXE
       run: |
-        pyinstaller --onefile --windowed --icon=app.ico --add-data "app.ico;." --name CloudflareSpeedTest-GUI CloudflareSpeedTest-GUI.py
+        if (Test-Path "app.ico") {
+          pyinstaller --onefile --windowed --icon=app.ico --add-data "app.ico;." --name CloudflareSpeedTest-GUI CloudflareSpeedTest-GUI.py
+        } else {
+          pyinstaller --onefile --windowed --name CloudflareSpeedTest-GUI CloudflareSpeedTest-GUI.py
+        }
+      shell: pwsh
     
     - name: Upload artifact
       uses: actions/upload-artifact@v4
