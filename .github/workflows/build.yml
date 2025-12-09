@@ -206,6 +206,7 @@ jobs:
         mkdir -p $PKG_DIR/root/usr/share/luci/menu.d
         mkdir -p $PKG_DIR/root/usr/share/rpcd/acl.d
         mkdir -p $PKG_DIR/root/usr/lib/lua/luci/controller
+        mkdir -p $PKG_DIR/root/usr/lib/lua/luci/model/cbi
         mkdir -p $PKG_DIR/CONTROL
         
         # 复制文件
@@ -215,6 +216,7 @@ jobs:
         cp openwrt/luci-clear-cache/menu.d/luci-clear-cache.json $PKG_DIR/root/usr/share/luci/menu.d/
         cp openwrt/luci-clear-cache/acl.d/luci-clear-cache.json $PKG_DIR/root/usr/share/rpcd/acl.d/
         cp openwrt/luci-clear-cache/controller/clearcache.lua $PKG_DIR/root/usr/lib/lua/luci/controller/
+        cp openwrt/luci-clear-cache/model/cbi/clearcache.lua $PKG_DIR/root/usr/lib/lua/luci/model/cbi/
         
         chmod +x $PKG_DIR/root/usr/bin/clear_luci_cache
         
