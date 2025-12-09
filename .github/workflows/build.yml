@@ -1,4 +1,4 @@
-name: Build EXE
+name: Build Release
 
 on:
   push:
@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  build-windows:
     runs-on: windows-latest
     permissions:
       contents: write
@@ -18,6 +18,8 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
     
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -39,26 +41,133 @@ jobs:
         }
       shell: pwsh
     
-    - name: Upload artifact
+    - name: Upload Windows artifact
       uses: actions/upload-artifact@v4
       with:
-        name: CloudflareSpeedTest-GUI
+        name: CloudflareSpeedTest-GUI-Windows
         path: dist/CloudflareSpeedTest-GUI.exe
         retention-days: 30
+
+  build-openwrt:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Build OpenWrt LuCI package
+      run: |
+        # 创建 ipk 包结构
+        mkdir -p openwrt-package/luci-app-cfspeedtest/root/usr/lib/lua/luci/controller
+        mkdir -p openwrt-package/luci-app-cfspeedtest/root/usr/lib/lua/luci/model/cbi
+        mkdir -p openwrt-package/luci-app-cfspeedtest/root/usr/lib/lua/luci/view/cfspeedtest
+        mkdir -p openwrt-package/luci-app-cfspeedtest/root/etc/config
+        mkdir -p openwrt-package/luci-app-cfspeedtest/root/etc/init.d
+        mkdir -p openwrt-package/luci-app-cfspeedtest/root/usr/bin
+        
+        # 复制 LuCI 文件
+        cp -r openwrt/luci/* openwrt-package/luci-app-cfspeedtest/root/usr/lib/lua/luci/
+        cp openwrt/cfspeedtest.config openwrt-package/luci-app-cfspeedtest/root/etc/config/cfspeedtest
+        cp openwrt/cfspeedtest.init openwrt-package/luci-app-cfspeedtest/root/etc/init.d/cfspeedtest
+        cp openwrt/cfspeedtest.sh openwrt-package/luci-app-cfspeedtest/root/usr/bin/cfspeedtest
+        chmod +x openwrt-package/luci-app-cfspeedtest/root/etc/init.d/cfspeedtest
+        chmod +x openwrt-package/luci-app-cfspeedtest/root/usr/bin/cfspeedtest
+        
+        # 创建控制文件
+        mkdir -p openwrt-package/luci-app-cfspeedtest/CONTROL
+        cat > openwrt-package/luci-app-cfspeedtest/CONTROL/control << 'EOF'
+        Package: luci-app-cfspeedtest
+        Version: 1.0.0
+        Depends: libc, luci-base
+        Section: luci
+        Architecture: all
+        Maintainer: CloudflareSpeedTest-GUI
+        Description: LuCI support for CloudflareSpeedTest
+        EOF
+        
+        # 打包 ipk
+        cd openwrt-package
+        tar -czvf data.tar.gz -C luci-app-cfspeedtest/root .
+        tar -czvf control.tar.gz -C luci-app-cfspeedtest/CONTROL .
+        echo "2.0" > debian-binary
+        tar -czvf ../luci-app-cfspeedtest_1.0.0_all.ipk debian-binary data.tar.gz control.tar.gz
+        cd ..
+      continue-on-error: true
+    
+    - name: Upload OpenWrt artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: luci-app-cfspeedtest-OpenWrt
+        path: luci-app-cfspeedtest_1.0.0_all.ipk
+        retention-days: 30
+      continue-on-error: true
+
+  release:
+    needs: [build-windows, build-openwrt]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Download Windows artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: CloudflareSpeedTest-GUI-Windows
+        path: ./release
+    
+    - name: Download OpenWrt artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: luci-app-cfspeedtest-OpenWrt
+        path: ./release
+      continue-on-error: true
     
     - name: Get current date
       id: date
-      run: echo "date=$(Get-Date -Format 'yyyy.MM.dd-HHmm')" >> $env:GITHUB_OUTPUT
-      shell: pwsh
+      run: echo "date=$(date +'%Y.%m.%d-%H%M')" >> $GITHUB_OUTPUT
+    
+    - name: Generate changelog
+      id: changelog
+      run: |
+        echo "changelog<<EOF" >> $GITHUB_OUTPUT
+        echo "## 更新日志" >> $GITHUB_OUTPUT
+        echo "" >> $GITHUB_OUTPUT
+        echo "### 🆕 本次更新" >> $GITHUB_OUTPUT
+        git log --pretty=format:"- %s" -10 >> $GITHUB_OUTPUT
+        echo "" >> $GITHUB_OUTPUT
+        echo "" >> $GITHUB_OUTPUT
+        echo "### 📦 下载说明" >> $GITHUB_OUTPUT
+        echo "- **Windows**: 下载 \`CloudflareSpeedTest-GUI.exe\`" >> $GITHUB_OUTPUT
+        echo "- **OpenWrt**: 下载 \`luci-app-cfspeedtest_1.0.0_all.ipk\` 并通过 LuCI 上传安装" >> $GITHUB_OUTPUT
+        echo "" >> $GITHUB_OUTPUT
+        echo "### ✨ 主要功能" >> $GITHUB_OUTPUT
+        echo "- 🖥️ 测速结果实时显示" >> $GITHUB_OUTPUT
+        echo "- 📊 进度条显示测速进度" >> $GITHUB_OUTPUT
+        echo "- 📋 结果查看器 (表格展示)" >> $GITHUB_OUTPUT
+        echo "- 📋 一键复制最优 IP" >> $GITHUB_OUTPUT
+        echo "- 🌙 深色/浅色主题切换" >> $GITHUB_OUTPUT
+        echo "- 📌 系统托盘支持" >> $GITHUB_OUTPUT
+        echo "- 🔄 自动更新 IP 库" >> $GITHUB_OUTPUT
+        echo "- 📜 测速历史记录" >> $GITHUB_OUTPUT
+        echo "" >> $GITHUB_OUTPUT
+        echo "---" >> $GITHUB_OUTPUT
+        echo "构建时间: ${{ steps.date.outputs.date }}" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
     
     - name: Create Release
       uses: softprops/action-gh-release@v1
       with:
         tag_name: v${{ steps.date.outputs.date }}
         name: Release ${{ steps.date.outputs.date }}
-        files: dist/CloudflareSpeedTest-GUI.exe
-        body: |
-          自动构建版本
-          构建时间: ${{ steps.date.outputs.date }}
+        files: |
+          ./release/*
+        body: ${{ steps.changelog.outputs.changelog }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

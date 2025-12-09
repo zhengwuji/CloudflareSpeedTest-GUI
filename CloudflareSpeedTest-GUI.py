@@ -24,10 +24,21 @@ SAVED_SETTINGS_FILE = "saved_settings.json"
 HISTORY_FILE = "history.json"
 APP_USER_MODEL_ID = "com.example.cloudflarespeedtest"
 
-# IP库更新地址
+# IP库更新地址（按优先级排序，包含国内代理）
 IP_UPDATE_URLS = [
+    "https://mirror.ghproxy.com/https://raw.githubusercontent.com/XIU2/CloudflareSpeedTest/master/ip.txt",
+    "https://ghproxy.com/https://raw.githubusercontent.com/XIU2/CloudflareSpeedTest/master/ip.txt",
+    "https://cdn.jsdelivr.net/gh/XIU2/CloudflareSpeedTest@master/ip.txt",
+    "https://fastly.jsdelivr.net/gh/XIU2/CloudflareSpeedTest@master/ip.txt",
     "https://raw.githubusercontent.com/XIU2/CloudflareSpeedTest/master/ip.txt",
-    "https://cdn.jsdelivr.net/gh/XIU2/CloudflareSpeedTest@master/ip.txt"
+    "https://raw.gitmirror.com/XIU2/CloudflareSpeedTest/master/ip.txt"
+]
+
+# 测速地址备选列表
+SPEED_TEST_URLS = [
+    "https://cf.xiu2.xyz/url",
+    "https://speed.cloudflare.com/__down?bytes=200000000",
+    "https://cf.ghproxy.cc/url"
 ]
 
 def _set_windows_appid(appid):
@@ -318,6 +329,17 @@ class MainWin(QtWidgets.QWidget):
 
         layout.addLayout(grid)
 
+        # 测速地址快速选择
+        url_layout = QtWidgets.QHBoxLayout()
+        url_label = QtWidgets.QLabel("快速选择测速地址:")
+        self.url_combo = QtWidgets.QComboBox()
+        self.url_combo.addItems(SPEED_TEST_URLS)
+        self.url_combo.currentTextChanged.connect(self._on_url_selected)
+        url_layout.addWidget(url_label)
+        url_layout.addWidget(self.url_combo)
+        url_layout.addStretch()
+        layout.addLayout(url_layout)
+
         # 保存/加载设置区域
         save_load_layout = QtWidgets.QGridLayout()
         save_load_layout.setColumnStretch(1, 1)
@@ -370,6 +392,11 @@ class MainWin(QtWidgets.QWidget):
         self.load_btn.clicked.connect(self._on_load_clicked)
         self.delete_btn.clicked.connect(self._on_delete_clicked)
         self.run_btn.clicked.connect(self._on_run_clicked)
+
+    def _on_url_selected(self, url):
+        """快速选择测速地址"""
+        cb, widget = self.controls["-url"]
+        widget.setText(url)
 
     def _build_output_tab(self, parent):
         layout = QtWidgets.QVBoxLayout(parent)
@@ -871,7 +898,7 @@ class MainWin(QtWidgets.QWidget):
         """更新 IP 库"""
         reply = QtWidgets.QMessageBox.question(
             self, "确认更新",
-            "是否从网络更新 Cloudflare IP 库?",
+            "是否从网络更新 Cloudflare IP 库?\n\n将依次尝试以下源:\n" + "\n".join([f"• {url[:50]}..." for url in IP_UPDATE_URLS[:3]]),
             QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No
         )
 
@@ -890,15 +917,15 @@ class MainWin(QtWidgets.QWidget):
             def run(self):
                 for url in IP_UPDATE_URLS:
                     try:
-                        response = requests.get(url, timeout=10)
+                        response = requests.get(url, timeout=15)
                         if response.status_code == 200:
                             with open(IP_FILE_NAME, 'w', encoding='utf-8') as f:
                                 f.write(response.text)
-                            self.finished.emit(True, f"IP 库已更新，共 {len(response.text.splitlines())} 行")
+                            self.finished.emit(True, f"IP 库已更新\n来源: {url[:50]}...\n共 {len(response.text.splitlines())} 行")
                             return
                     except Exception as e:
                         continue
-                self.finished.emit(False, "所有更新源均失败，请检查网络")
+                self.finished.emit(False, "所有更新源均失败，请检查网络连接")
 
         def on_update_finished(success, message):
             self.update_ip_btn.setEnabled(True)
