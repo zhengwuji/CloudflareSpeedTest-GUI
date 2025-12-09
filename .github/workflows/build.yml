@@ -197,6 +197,49 @@ jobs:
         echo "2.0" > debian-binary
         tar -czvf ../luci-app-cfspeedtest_${VERSION}_all.ipk debian-binary data.tar.gz control.tar.gz
     
+    - name: Build LuCI Clear Cache package
+      run: |
+        PKG_DIR="pkg-cache/luci-clear-cache"
+        mkdir -p $PKG_DIR/root/usr/bin
+        mkdir -p $PKG_DIR/CONTROL
+        
+        cp openwrt/luci-clear-cache/clear_luci_cache.sh $PKG_DIR/root/usr/bin/clear_luci_cache
+        chmod +x $PKG_DIR/root/usr/bin/clear_luci_cache
+        
+        echo "Package: luci-clear-cache" > $PKG_DIR/CONTROL/control
+        echo "Version: 1.0.0" >> $PKG_DIR/CONTROL/control
+        echo "Depends: libc" >> $PKG_DIR/CONTROL/control
+        echo "Section: luci" >> $PKG_DIR/CONTROL/control
+        echo "Architecture: all" >> $PKG_DIR/CONTROL/control
+        echo "Maintainer: CloudflareSpeedTest-GUI" >> $PKG_DIR/CONTROL/control
+        echo "Description: Auto clear LuCI cache on install/uninstall" >> $PKG_DIR/CONTROL/control
+        
+        # 安装后自动清除缓存
+        echo '#!/bin/sh' > $PKG_DIR/CONTROL/postinst
+        echo '[ -z "$IPKG_INSTROOT" ] && {' >> $PKG_DIR/CONTROL/postinst
+        echo '    echo "Clearing LuCI cache..."' >> $PKG_DIR/CONTROL/postinst
+        echo '    rm -rf /tmp/luci-*' >> $PKG_DIR/CONTROL/postinst
+        echo '    /etc/init.d/rpcd restart 2>/dev/null' >> $PKG_DIR/CONTROL/postinst
+        echo '    echo "LuCI cache cleared!"' >> $PKG_DIR/CONTROL/postinst
+        echo '}' >> $PKG_DIR/CONTROL/postinst
+        echo 'exit 0' >> $PKG_DIR/CONTROL/postinst
+        chmod +x $PKG_DIR/CONTROL/postinst
+        
+        # 卸载后也清除缓存
+        echo '#!/bin/sh' > $PKG_DIR/CONTROL/postrm
+        echo '[ -z "$IPKG_INSTROOT" ] && {' >> $PKG_DIR/CONTROL/postrm
+        echo '    rm -rf /tmp/luci-*' >> $PKG_DIR/CONTROL/postrm
+        echo '    /etc/init.d/rpcd restart 2>/dev/null' >> $PKG_DIR/CONTROL/postrm
+        echo '}' >> $PKG_DIR/CONTROL/postrm
+        echo 'exit 0' >> $PKG_DIR/CONTROL/postrm
+        chmod +x $PKG_DIR/CONTROL/postrm
+        
+        cd pkg-cache
+        tar -czvf data.tar.gz -C luci-clear-cache/root .
+        tar -czvf control.tar.gz -C luci-clear-cache/CONTROL .
+        echo "2.0" > debian-binary
+        tar -czvf ../luci-clear-cache_1.0.0_all.ipk debian-binary data.tar.gz control.tar.gz
+    
     - name: Upload OpenWrt artifacts
       uses: actions/upload-artifact@v4
       with:
@@ -204,6 +247,7 @@ jobs:
         path: |
           luci-app-cfspeedtest_*_all.ipk
           luci-app-cfspeedtest_*_legacy.ipk
+          luci-clear-cache_*_all.ipk
         retention-days: 30
     
     - name: Commit version update
@@ -251,6 +295,7 @@ jobs:
           | Windows | `CloudflareSpeedTest-GUI.exe` | Windows 7+ |
           | OpenWrt | `luci-app-cfspeedtest_${{ needs.build-openwrt.outputs.version }}_all.ipk` | **OpenWrt 21.02+** (推荐) |
           | OpenWrt | `luci-app-cfspeedtest_${{ needs.build-openwrt.outputs.version }}_legacy.ipk` | OpenWrt 18.x - 22.x |
+          | OpenWrt | `luci-clear-cache_1.0.0_all.ipk` | 🧹 LuCI缓存清除工具 (独立) |
           
           ### ✨ 功能
           - Windows GUI 深色/浅色主题切换
@@ -258,5 +303,11 @@ jobs:
           - 实时日志 / 结果可视化 / 历史记录
           - 定时测速 / 自动应用最优IP
           - Passwall / SSR Plus / OpenClash / MosDNS 联动
+          
+          ### 🧹 LuCI缓存清除工具
+          独立IPK，安装时自动清除LuCI缓存。安装任何LuCI应用遇到问题时可先安装此工具清除缓存。
+          ```bash
+          opkg install luci-clear-cache_1.0.0_all.ipk
+          ```
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
