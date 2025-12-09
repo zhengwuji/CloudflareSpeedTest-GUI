@@ -32,7 +32,7 @@ class MainWin(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("CloudflareSpeedTest_GUI -- 小琳解说")
+        self.setWindowTitle("CloudflareSpeedTest_GUI")
 
         # 图标（修复：PyInstaller 下也能找到）
         if os.path.exists(APP_ICON):
