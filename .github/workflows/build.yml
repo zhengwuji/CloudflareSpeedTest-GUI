@@ -59,7 +59,6 @@ jobs:
     
     - name: Build OpenWrt Legacy LuCI package
       run: |
-        # 创建传统 Lua 版本 ipk
         PKG_DIR="pkg-legacy/luci-app-cfspeedtest"
         mkdir -p $PKG_DIR/root/usr/lib/lua/luci/controller
         mkdir -p $PKG_DIR/root/usr/lib/lua/luci/model/cbi/cfspeedtest
@@ -68,8 +67,8 @@ jobs:
         mkdir -p $PKG_DIR/root/etc/init.d
         mkdir -p $PKG_DIR/root/etc/cfspeedtest
         mkdir -p $PKG_DIR/root/usr/bin
+        mkdir -p $PKG_DIR/CONTROL
         
-        # 复制文件
         cp openwrt/luci/controller/cfspeedtest.lua $PKG_DIR/root/usr/lib/lua/luci/controller/
         cp openwrt/luci/model/cbi/cfspeedtest/*.lua $PKG_DIR/root/usr/lib/lua/luci/model/cbi/cfspeedtest/
         cp openwrt/luci/view/cfspeedtest/*.htm $PKG_DIR/root/usr/lib/lua/luci/view/cfspeedtest/
@@ -83,20 +82,14 @@ jobs:
         chmod +x $PKG_DIR/root/etc/init.d/cfspeedtest
         chmod +x $PKG_DIR/root/usr/bin/*
         
-        # 控制文件
-        mkdir -p $PKG_DIR/CONTROL
-        cat > $PKG_DIR/CONTROL/control << 'EOF'
-Package: luci-app-cfspeedtest
-Version: 2.0.0
-Depends: libc, luci-base, wget
-Section: luci
-Architecture: all
-Maintainer: CloudflareSpeedTest-GUI
-Description: LuCI support for CloudflareSpeedTest (Legacy Lua Version)
- 适用于 OpenWrt 18.x - 22.x 传统 LuCI 版本
-EOF
+        echo "Package: luci-app-cfspeedtest" > $PKG_DIR/CONTROL/control
+        echo "Version: 2.0.0" >> $PKG_DIR/CONTROL/control
+        echo "Depends: libc, luci-base, wget" >> $PKG_DIR/CONTROL/control
+        echo "Section: luci" >> $PKG_DIR/CONTROL/control
+        echo "Architecture: all" >> $PKG_DIR/CONTROL/control
+        echo "Maintainer: CloudflareSpeedTest-GUI" >> $PKG_DIR/CONTROL/control
+        echo "Description: LuCI support for CloudflareSpeedTest (Legacy)" >> $PKG_DIR/CONTROL/control
         
-        # 打包
         cd pkg-legacy
         tar -czvf data.tar.gz -C luci-app-cfspeedtest/root .
         tar -czvf control.tar.gz -C luci-app-cfspeedtest/CONTROL .
@@ -121,7 +114,6 @@ EOF
     
     - name: Build OpenWrt JS LuCI package
       run: |
-        # 创建新版 JS 版本 ipk (OpenWrt 21.02+)
         PKG_DIR="pkg-js/luci-app-cfspeedtest"
         mkdir -p $PKG_DIR/root/www/luci-static/resources/view/cfspeedtest
         mkdir -p $PKG_DIR/root/usr/share/luci/menu.d
@@ -130,16 +122,12 @@ EOF
         mkdir -p $PKG_DIR/root/etc/init.d
         mkdir -p $PKG_DIR/root/etc/cfspeedtest
         mkdir -p $PKG_DIR/root/usr/bin
+        mkdir -p $PKG_DIR/CONTROL
         
-        # 复制 JS 视图文件
         cp openwrt/luci-js/htdocs/luci-static/resources/view/cfspeedtest/*.js $PKG_DIR/root/www/luci-static/resources/view/cfspeedtest/
         cp openwrt/luci-js/htdocs/luci-static/resources/view/cfspeedtest.js $PKG_DIR/root/www/luci-static/resources/view/
-        
-        # 复制菜单和 ACL 配置
         cp openwrt/luci-js/root/usr/share/luci/menu.d/*.json $PKG_DIR/root/usr/share/luci/menu.d/
         cp openwrt/luci-js/root/usr/share/rpcd/acl.d/*.json $PKG_DIR/root/usr/share/rpcd/acl.d/
-        
-        # 复制脚本和配置
         cp openwrt/cfspeedtest.config $PKG_DIR/root/etc/config/cfspeedtest
         cp openwrt/cfspeedtest.init $PKG_DIR/root/etc/init.d/cfspeedtest
         cp openwrt/cfspeedtest.sh $PKG_DIR/root/usr/bin/cfspeedtest
@@ -150,31 +138,23 @@ EOF
         chmod +x $PKG_DIR/root/etc/init.d/cfspeedtest
         chmod +x $PKG_DIR/root/usr/bin/*
         
-        # 控制文件
-        mkdir -p $PKG_DIR/CONTROL
-        cat > $PKG_DIR/CONTROL/control << 'EOF'
-Package: luci-app-cfspeedtest
-Version: 2.0.0
-Depends: libc, luci-base, wget
-Section: luci
-Architecture: all
-Maintainer: CloudflareSpeedTest-GUI
-Description: LuCI support for CloudflareSpeedTest (JS Version for OpenWrt 21.02+)
- 适用于 OpenWrt 21.02+ / 22.x / 23.x / 24.x 新版 LuCI JS 界面
-EOF
+        echo "Package: luci-app-cfspeedtest" > $PKG_DIR/CONTROL/control
+        echo "Version: 2.0.0" >> $PKG_DIR/CONTROL/control
+        echo "Depends: libc, luci-base, wget" >> $PKG_DIR/CONTROL/control
+        echo "Section: luci" >> $PKG_DIR/CONTROL/control
+        echo "Architecture: all" >> $PKG_DIR/CONTROL/control
+        echo "Maintainer: CloudflareSpeedTest-GUI" >> $PKG_DIR/CONTROL/control
+        echo "Description: LuCI support for CloudflareSpeedTest (JS for OpenWrt 21.02+)" >> $PKG_DIR/CONTROL/control
         
-        cat > $PKG_DIR/CONTROL/postinst << 'EOF'
-#!/bin/sh
-[ -z "$IPKG_INSTROOT" ] && {
-    /etc/init.d/cfspeedtest enable
-    /etc/init.d/rpcd restart
-    rm -rf /tmp/luci-*
-}
-exit 0
-EOF
+        echo '#!/bin/sh' > $PKG_DIR/CONTROL/postinst
+        echo '[ -z "$IPKG_INSTROOT" ] && {' >> $PKG_DIR/CONTROL/postinst
+        echo '    /etc/init.d/cfspeedtest enable' >> $PKG_DIR/CONTROL/postinst
+        echo '    /etc/init.d/rpcd restart' >> $PKG_DIR/CONTROL/postinst
+        echo '    rm -rf /tmp/luci-*' >> $PKG_DIR/CONTROL/postinst
+        echo '}' >> $PKG_DIR/CONTROL/postinst
+        echo 'exit 0' >> $PKG_DIR/CONTROL/postinst
         chmod +x $PKG_DIR/CONTROL/postinst
         
-        # 打包
         cd pkg-js
         tar -czvf data.tar.gz -C luci-app-cfspeedtest/root .
         tar -czvf control.tar.gz -C luci-app-cfspeedtest/CONTROL .
@@ -216,45 +196,25 @@ EOF
     - name: Generate changelog
       id: changelog
       run: |
-        echo "changelog<<EOF" >> $GITHUB_OUTPUT
-        echo "## 🎉 CloudflareSpeedTest-GUI Release" >> $GITHUB_OUTPUT
+        echo "changelog<<CHANGELOG_EOF" >> $GITHUB_OUTPUT
+        echo "## CloudflareSpeedTest-GUI Release" >> $GITHUB_OUTPUT
         echo "" >> $GITHUB_OUTPUT
-        echo "### 📝 更新日志" >> $GITHUB_OUTPUT
-        git log --pretty=format:"- %s" -10 >> $GITHUB_OUTPUT
+        echo "### Download" >> $GITHUB_OUTPUT
+        echo "| Platform | File | Version |" >> $GITHUB_OUTPUT
+        echo "|----------|------|---------|" >> $GITHUB_OUTPUT
+        echo "| Windows | CloudflareSpeedTest-GUI.exe | Windows 7+ |" >> $GITHUB_OUTPUT
+        echo "| OpenWrt | luci-app-cfspeedtest_2.0.0_js.ipk | OpenWrt 21.02+ (Recommended) |" >> $GITHUB_OUTPUT
+        echo "| OpenWrt | luci-app-cfspeedtest_2.0.0_legacy.ipk | OpenWrt 18.x - 22.x |" >> $GITHUB_OUTPUT
         echo "" >> $GITHUB_OUTPUT
+        echo "### Features" >> $GITHUB_OUTPUT
+        echo "- Windows GUI with dark/light theme" >> $GITHUB_OUTPUT
+        echo "- OpenWrt LuCI with real-time log" >> $GITHUB_OUTPUT
+        echo "- Auto apply best IP to Passwall/SSR Plus/OpenClash" >> $GITHUB_OUTPUT
+        echo "- Scheduled speed test" >> $GITHUB_OUTPUT
+        echo "- History records" >> $GITHUB_OUTPUT
         echo "" >> $GITHUB_OUTPUT
-        echo "---" >> $GITHUB_OUTPUT
-        echo "" >> $GITHUB_OUTPUT
-        echo "### 📦 下载说明" >> $GITHUB_OUTPUT
-        echo "" >> $GITHUB_OUTPUT
-        echo "| 平台 | 文件 | 适用版本 |" >> $GITHUB_OUTPUT
-        echo "|------|------|----------|" >> $GITHUB_OUTPUT
-        echo "| Windows | \`CloudflareSpeedTest-GUI.exe\` | Windows 7+ |" >> $GITHUB_OUTPUT
-        echo "| OpenWrt | \`luci-app-cfspeedtest_2.0.0_js.ipk\` | **OpenWrt 21.02+** (推荐) |" >> $GITHUB_OUTPUT
-        echo "| OpenWrt | \`luci-app-cfspeedtest_2.0.0_legacy.ipk\` | OpenWrt 18.x - 22.x |" >> $GITHUB_OUTPUT
-        echo "" >> $GITHUB_OUTPUT
-        echo "> ⚠️ **OpenWrt 用户请注意**: " >> $GITHUB_OUTPUT
-        echo "> - 如果你使用 **Kwrt / iStoreOS / OpenWrt 21.02+**，请下载 **\`_js.ipk\`** 版本" >> $GITHUB_OUTPUT
-        echo "> - 如果你使用 **OpenWrt 18.x/19.x** 旧版本，请下载 **\`_legacy.ipk\`** 版本" >> $GITHUB_OUTPUT
-        echo "" >> $GITHUB_OUTPUT
-        echo "---" >> $GITHUB_OUTPUT
-        echo "" >> $GITHUB_OUTPUT
-        echo "### ✨ 功能列表" >> $GITHUB_OUTPUT
-        echo "" >> $GITHUB_OUTPUT
-        echo "**Windows GUI:**" >> $GITHUB_OUTPUT
-        echo "- 🖥️ 测速结果实时显示 | 📊 进度条 | 📋 结果表格" >> $GITHUB_OUTPUT
-        echo "- 📋 一键复制最优IP | 🌙 深色/浅色主题 | 📌 系统托盘" >> $GITHUB_OUTPUT
-        echo "- 🔄 自动更新IP库 | 📜 历史记录" >> $GITHUB_OUTPUT
-        echo "" >> $GITHUB_OUTPUT
-        echo "**OpenWrt LuCI:**" >> $GITHUB_OUTPUT
-        echo "- ⚙️ 可视化配置 | 📺 实时日志 | 📊 结果可视化" >> $GITHUB_OUTPUT
-        echo "- 📜 历史记录 | ⏰ 定时测速 | 🚀 自动应用最优IP" >> $GITHUB_OUTPUT
-        echo "- 🔗 Passwall/SSR Plus/OpenClash 联动" >> $GITHUB_OUTPUT
-        echo "- 📝 自定义IP段 | 📤 结果导出 | 🔧 版本管理" >> $GITHUB_OUTPUT
-        echo "" >> $GITHUB_OUTPUT
-        echo "---" >> $GITHUB_OUTPUT
-        echo "构建时间: ${{ steps.date.outputs.date }}" >> $GITHUB_OUTPUT
-        echo "EOF" >> $GITHUB_OUTPUT
+        echo "Build time: ${{ steps.date.outputs.date }}" >> $GITHUB_OUTPUT
+        echo "CHANGELOG_EOF" >> $GITHUB_OUTPUT
     
     - name: Create Release
       uses: softprops/action-gh-release@v1
