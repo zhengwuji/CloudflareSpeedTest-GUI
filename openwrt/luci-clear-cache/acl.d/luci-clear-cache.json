@@ -1,0 +1,25 @@
+{
+    "luci-clear-cache": {
+        "description": "Grant access to LuCI cache management",
+        "read": {
+            "uci": [
+                "clearcache"
+            ],
+            "file": {
+                "/tmp/luci-*": [
+                    "read"
+                ]
+            }
+        },
+        "write": {
+            "uci": [
+                "clearcache"
+            ],
+            "file": {
+                "/tmp/luci-*": [
+                    "write"
+                ]
+            }
+        }
+    }
+}

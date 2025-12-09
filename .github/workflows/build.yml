@@ -201,26 +201,41 @@ jobs:
       run: |
         PKG_DIR="pkg-cache/luci-clear-cache"
         mkdir -p $PKG_DIR/root/usr/bin
+        mkdir -p $PKG_DIR/root/etc/config
+        mkdir -p $PKG_DIR/root/www/luci-static/resources/view
+        mkdir -p $PKG_DIR/root/usr/share/luci/menu.d
+        mkdir -p $PKG_DIR/root/usr/share/rpcd/acl.d
+        mkdir -p $PKG_DIR/root/usr/lib/lua/luci/controller
         mkdir -p $PKG_DIR/CONTROL
         
+        # 复制文件
         cp openwrt/luci-clear-cache/clear_luci_cache.sh $PKG_DIR/root/usr/bin/clear_luci_cache
+        cp openwrt/luci-clear-cache/clearcache.config $PKG_DIR/root/etc/config/clearcache
+        cp openwrt/luci-clear-cache/view/clearcache.js $PKG_DIR/root/www/luci-static/resources/view/
+        cp openwrt/luci-clear-cache/menu.d/luci-clear-cache.json $PKG_DIR/root/usr/share/luci/menu.d/
+        cp openwrt/luci-clear-cache/acl.d/luci-clear-cache.json $PKG_DIR/root/usr/share/rpcd/acl.d/
+        cp openwrt/luci-clear-cache/controller/clearcache.lua $PKG_DIR/root/usr/lib/lua/luci/controller/
+        
         chmod +x $PKG_DIR/root/usr/bin/clear_luci_cache
         
         echo "Package: luci-clear-cache" > $PKG_DIR/CONTROL/control
         echo "Version: 1.0.0" >> $PKG_DIR/CONTROL/control
-        echo "Depends: libc" >> $PKG_DIR/CONTROL/control
+        echo "Depends: libc, luci-base" >> $PKG_DIR/CONTROL/control
         echo "Section: luci" >> $PKG_DIR/CONTROL/control
         echo "Architecture: all" >> $PKG_DIR/CONTROL/control
         echo "Maintainer: CloudflareSpeedTest-GUI" >> $PKG_DIR/CONTROL/control
-        echo "Description: Auto clear LuCI cache on install/uninstall" >> $PKG_DIR/CONTROL/control
+        echo "Description: LuCI Cache Manager with UI" >> $PKG_DIR/CONTROL/control
         
-        # 安装后自动清除缓存
+        # 安装后自动清除缓存（检查配置）
         echo '#!/bin/sh' > $PKG_DIR/CONTROL/postinst
         echo '[ -z "$IPKG_INSTROOT" ] && {' >> $PKG_DIR/CONTROL/postinst
-        echo '    echo "Clearing LuCI cache..."' >> $PKG_DIR/CONTROL/postinst
-        echo '    rm -rf /tmp/luci-*' >> $PKG_DIR/CONTROL/postinst
-        echo '    /etc/init.d/rpcd restart 2>/dev/null' >> $PKG_DIR/CONTROL/postinst
-        echo '    echo "LuCI cache cleared!"' >> $PKG_DIR/CONTROL/postinst
+        echo '    AUTO_CLEAR=$(uci -q get clearcache.config.auto_clear)' >> $PKG_DIR/CONTROL/postinst
+        echo '    if [ "$AUTO_CLEAR" != "0" ]; then' >> $PKG_DIR/CONTROL/postinst
+        echo '        echo "Clearing LuCI cache..."' >> $PKG_DIR/CONTROL/postinst
+        echo '        rm -rf /tmp/luci-*' >> $PKG_DIR/CONTROL/postinst
+        echo '        /etc/init.d/rpcd restart 2>/dev/null' >> $PKG_DIR/CONTROL/postinst
+        echo '        echo "LuCI cache cleared!"' >> $PKG_DIR/CONTROL/postinst
+        echo '    fi' >> $PKG_DIR/CONTROL/postinst
         echo '}' >> $PKG_DIR/CONTROL/postinst
         echo 'exit 0' >> $PKG_DIR/CONTROL/postinst
         chmod +x $PKG_DIR/CONTROL/postinst

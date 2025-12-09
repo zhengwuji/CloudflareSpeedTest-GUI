@@ -1,0 +1,15 @@
+{
+    "admin/system/clearcache": {
+        "title": "LuCI缓存管理",
+        "order": 99,
+        "action": {
+            "type": "view",
+            "path": "clearcache"
+        },
+        "depends": {
+            "acl": [
+                "luci-clear-cache"
+            ]
+        }
+    }
+}
