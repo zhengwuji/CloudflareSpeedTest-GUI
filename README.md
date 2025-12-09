@@ -1,132 +1,178 @@
 # CloudflareSpeedTest-GUI
 
-Cloudflare 优选 IP 测速工具的图形化界面 (GUI)
+🚀 **Cloudflare IP 优选工具** - 图形化界面，支持 Windows 和 OpenWrt
 
-## 功能特点
+[![Build Release](https://github.com/zhengwuji/CloudflareSpeedTest-GUI/actions/workflows/build.yml/badge.svg)](https://github.com/zhengwuji/CloudflareSpeedTest-GUI/actions/workflows/build.yml)
+[![GitHub Release](https://img.shields.io/github/v/release/zhengwuji/CloudflareSpeedTest-GUI)](https://github.com/zhengwuji/CloudflareSpeedTest-GUI/releases)
+[![License](https://img.shields.io/github/license/zhengwuji/CloudflareSpeedTest-GUI)](LICENSE)
 
-- 🖥️ 测速结果实时显示
-- 📊 进度条显示测速进度
-- 📋 结果查看器 (表格展示，支持排序筛选)
-- 📋 一键复制最优 IP
+## 📖 简介
+
+基于 [XIU2/CloudflareSpeedTest](https://github.com/XIU2/CloudflareSpeedTest) 开发的图形化界面工具，让 Cloudflare IP 测速更加简单便捷。
+
+## ✨ 功能特性
+
+### Windows 桌面版
+- 🖥️ 现代化图形界面
 - 🌙 深色/浅色主题切换
-- 📌 系统托盘支持
-- 🔄 自动更新 IP 库 (国内代理源)
-- 📜 测速历史记录
+- 📊 测速结果实时显示
+- 📋 一键复制最优 IP
+- 📌 系统托盘最小化
+- 🔄 自动更新 IP 库
+- 📜 历史记录保存
 
-## 📥 下载
+### OpenWrt LuCI 版
+- ⚙️ 可视化配置界面
+- 📺 实时日志查看
+- 📊 测速结果可视化
+- 📜 历史记录管理
+- ⏰ 定时测速任务
+- 🚀 自动应用最优 IP
+- 📝 自定义 IP 段
+- 📤 结果导出 (CSV/JSON)
 
-从 [Releases](../../releases) 页面下载最新版本：
+### 第三方应用联动
+- 🔗 **Shadowsocksr Plus+** - 自动更新节点 IP
+- 🔗 **PassWall2** - 自动更新节点地址
+- 🔗 **Bypass** - 自动更新服务器
+- 🔗 **OpenClash** - 自动更新配置
+- 🔗 **MosDNS** - 自动更新 IP 文件
+- 🔗 **Hosts** - 自动添加域名解析
+- 🔗 **DNS/dnsmasq** - 自动添加 DNS 记录
 
-- **Windows**: `CloudflareSpeedTest-GUI.exe`
-- **OpenWrt**: `luci-app-cfspeedtest_1.0.0_all.ipk`
+## 📦 下载安装
 
----
+### 从 Releases 下载
 
-## 🖥️ Windows 使用说明
+前往 [Releases 页面](https://github.com/zhengwuji/CloudflareSpeedTest-GUI/releases) 下载最新版本。
 
-### 前置要求
+| 平台 | 文件 | 说明 |
+|------|------|------|
+| Windows | `CloudflareSpeedTest-GUI.exe` | Windows 7+ 双击运行 |
+| OpenWrt | `luci-app-cfspeedtest_x.x.x_all.ipk` | **推荐** OpenWrt 21.02+ / Kwrt / iStoreOS |
+| OpenWrt | `luci-app-cfspeedtest_x.x.x_legacy.ipk` | OpenWrt 18.x - 22.x 传统版本 |
+| OpenWrt | `luci-clear-cache_1.0.0_all.ipk` | LuCI 缓存管理工具 (独立) |
 
-在程序同目录下需要以下文件：
-- `cfst.exe` - CloudflareSpeedTest 命令行工具
-- `ip.txt` - IP 段数据文件 (可通过程序自动更新)
-
-### 运行方式
-
-**方式一：直接运行 EXE**
-
-下载 `CloudflareSpeedTest-GUI.exe` 双击运行
-
-**方式二：Python 运行**
-
-```bash
-pip install PyQt5 requests
-python CloudflareSpeedTest-GUI.py
-```
-
----
-
-## 📡 OpenWrt 使用说明
-
-### 安装方法
-
-1. 下载 `luci-app-cfspeedtest_1.0.0_all.ipk`
-2. 登录 OpenWrt LuCI 界面
-3. 进入 **系统 → 软件包 → 上传软件包**
-4. 选择下载的 ipk 文件并安装
-5. 安装完成后在 **服务** 菜单中找到 **CF优选IP**
-
-### 功能说明
-
-- 自动下载适合路由器架构的 CloudflareST 二进制
-- 支持 x86_64, ARM64, ARM, MIPS 等架构
-- 通过 LuCI 界面配置测速参数
-- 使用国内代理源更新 IP 库
-
-### 手动安装
+### OpenWrt 安装命令
 
 ```bash
-# SSH 登录路由器后执行
-opkg install luci-app-cfspeedtest_1.0.0_all.ipk
-/etc/init.d/cfspeedtest enable
+# 上传 ipk 文件到 /tmp 目录后执行
+opkg install /tmp/luci-app-cfspeedtest_x.x.x_all.ipk
+
+# 清除缓存并刷新
+rm -rf /tmp/luci-*
 ```
 
----
+## 🖼️ 界面预览
 
-## 参数说明
+### Windows 版
+- 现代化深色主题界面
+- 实时显示测速进度
+- 表格显示测速结果
+- 系统托盘最小化
 
-| 参数 | 默认值 | 说明 |
-|------|--------|------|
-| -n | 200 | 延迟测试线程数 (1-1000) |
-| -t | 4 | 延迟测试次数 |
-| -dn | 10 | 下载测速数量 |
-| -dt | 10 | 下载测速时间(秒) |
-| -tp | 443 | 测速端口 |
-| -url | cf.xiu2.xyz | 测速地址 |
-| -httping | - | HTTPing 模式 |
-| -cfcolo | HKG,KHH,NRT,LAX | 数据中心地区码 |
-| -tl | 9999 | 平均延迟上限(ms) |
-| -tll | 0 | 平均延迟下限(ms) |
-| -tlr | 1.00 | 丢包率上限 |
-| -sl | 0 | 下载速度下限(MB/s) |
-| -dd | - | 禁用下载测速 |
-| -allip | - | 测速全部 IP |
+### OpenWrt LuCI 版
 
----
+安装后在 **服务 → CF优选IP** 中访问：
 
-## 自行构建
+| 菜单 | 功能 |
+|------|------|
+| 基本设置 | 测速参数配置、测速控制 |
+| 实时日志 | 查看测速进度和日志 |
+| 测速结果 | 可视化显示测速结果 |
+| 历史记录 | 查看历史测速记录 |
+| 定时任务 | 配置定时自动测速 |
+| 自定义IP | 管理自定义 IP 段 |
+| 高级设置 | 代理设置、版本管理 |
+| 第三方应用 | 配置第三方应用联动 |
 
-### Windows
+## 🔧 使用说明
 
+### 基本测速参数
+
+| 参数 | 说明 | 默认值 |
+|------|------|--------|
+| 延迟线程数 | 同时测试延迟的线程数 | 200 |
+| 延迟测试次数 | 每个 IP 测试次数 | 4 |
+| 下载测速数量 | 进行下载测速的 IP 数量 | 10 |
+| 下载测速时间 | 每个 IP 下载测速时长(秒) | 10 |
+| 测速端口 | 使用的端口号 | 443 |
+| 平均延迟上限 | 过滤高延迟 IP (ms) | 9999 |
+| 下载速度下限 | 过滤低速 IP (MB/s) | 0 |
+
+### HTTPing 模式
+
+启用 HTTPing 模式时可以指定数据中心地区码：
+
+```
+HKG - 香港
+KHH - 高雄
+NRT - 东京成田
+LAX - 洛杉矶
+SIN - 新加坡
+ICN - 首尔
+```
+
+多个地区用逗号分隔：`HKG,KHH,NRT,LAX`
+
+### 第三方应用联动配置
+
+1. 进入 **服务 → CF优选IP → 第三方应用**
+2. 选择要联动的应用标签页
+3. 开启对应应用
+4. 填写节点 ID 或配置项
+5. 保存设置
+
+测速完成后会自动将最优 IP 应用到配置的第三方应用。
+
+## 🧹 LuCI 缓存管理工具
+
+独立的 LuCI 缓存清除工具，解决安装应用后页面显示异常的问题。
+
+### 功能
+- ✅ 安装/卸载 IPK 时自动清除缓存
+- ✅ 手动清除缓存按钮
+- ✅ 可配置开关
+
+### 安装
 ```bash
-pip install pyinstaller PyQt5 requests
-pyinstaller --onefile --windowed --name CloudflareSpeedTest-GUI CloudflareSpeedTest-GUI.py
+opkg install luci-clear-cache_1.0.0_all.ipk
 ```
 
-### OpenWrt
+### 位置
+**系统 → LuCI缓存管理**
 
-使用 GitHub Actions 自动构建，或参考 `openwrt/` 目录手动打包。
-
----
-
-## 📁 项目结构
-
-```
-├── CloudflareSpeedTest-GUI.py  # Windows GUI 主程序
-├── requirements.txt            # Python 依赖
-├── .github/
-│   └── workflows/
-│       └── build.yml           # 自动构建配置
-└── openwrt/                    # OpenWrt LuCI 包
-    ├── luci/
-    │   ├── controller/         # LuCI 控制器
-    │   └── model/cbi/          # LuCI CBI 配置页面
-    ├── cfspeedtest.config      # UCI 配置文件
-    ├── cfspeedtest.init        # init.d 启动脚本
-    └── cfspeedtest.sh          # 测速执行脚本
+### 命令行使用
+```bash
+clear_luci_cache
 ```
 
----
+## 📋 更新日志
 
-## License
+### v1.0.x
+- ✅ Windows 图形界面
+- ✅ OpenWrt LuCI 界面 (JS 版本)
+- ✅ OpenWrt LuCI 界面 (Legacy 版本)
+- ✅ 第三方应用联动 (SSR Plus+, PassWall2, Bypass, OpenClash, MosDNS)
+- ✅ 定时测速任务
+- ✅ 自定义 IP 段
+- ✅ 历史记录管理
+- ✅ LuCI 缓存管理工具
+
+## 🙏 致谢
+
+- [XIU2/CloudflareSpeedTest](https://github.com/XIU2/CloudflareSpeedTest) - 核心测速引擎
+- [OpenWrt](https://openwrt.org/) - 路由器固件
+- [LuCI](https://github.com/openwrt/luci) - Web 管理界面
+
+## 📄 许可证
 
 MIT License
+
+## ⭐ Star History
+
+如果觉得有帮助，请给个 ⭐ Star 支持一下！
+
+---
+
+**Made with ❤️ by zhengwuji**
